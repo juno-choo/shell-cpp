@@ -9,4 +9,10 @@ int main() {
 
   // TODO: Uncomment the code below to pass the first stage
   cout << "$ ";
+
+  string command;
+  getline(cin, command);
+  cout << command << ": command not found " << endl;
+
+  return 0;
 }
