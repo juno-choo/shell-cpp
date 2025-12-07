@@ -7,19 +7,17 @@ int main() {
   cout << unitbuf;
   cerr << unitbuf;
 
-  bool running = true;
-
-  while (running) {
+  while (true) {
     cout << "$ ";
 
     string command;
-    getline(cin, command);
-    cout << command << ": command not found " << endl;
-
     if (command == "exit") {
-      running = false;
-    }
-  } 
-
+      break;
+    } 
+    else {
+      getline(cin, command);
+      cout << command << ": command not found " << endl;  
+    } 
+  }
   return 0;
 }
