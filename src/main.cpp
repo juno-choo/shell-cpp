@@ -13,7 +13,12 @@ int main() {
     string command;
     string line;
     cin >> command;
-    cin.get(); // consume the space after the command
+
+    // Remove leading space before getline
+    if (cin.peek() == ' ') {
+        cin.get();
+    }
+
     getline(cin, line); 
 
     if (command == "exit") {
