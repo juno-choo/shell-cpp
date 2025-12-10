@@ -3,7 +3,7 @@
 #include <vector>
 using namespace std;
 
-const vector<string> BUILTINS = {"echo", "exit", "cd", "ls", "pwd"};
+const vector<string> BUILTINS = {"echo", "exit", "cd", "ls", "pwd", "type"};
 
 bool isBuiltin(const string& cmd) {
   for (const auto& builtin : BUILTINS) {
