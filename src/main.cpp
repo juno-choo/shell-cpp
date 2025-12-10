@@ -13,6 +13,7 @@ int main() {
     string command;
     string line;
     cin >> command;
+    cin.get(); // consume the space after the command
     getline(cin, line); 
 
     if (command == "exit") {
