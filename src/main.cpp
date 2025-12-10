@@ -11,11 +11,16 @@ int main() {
     cout << "$ ";
 
     string command;
-    getline(cin, command);
-    
+    string line;
+    cin >> command;
+    getline(cin, line); 
+
     if (command == "exit") {
       break;
     } 
+    else if (command == "echo") {
+      cout << line << endl;
+    }
     else {
       cout << command << ": command not found " << endl;  
     } 
