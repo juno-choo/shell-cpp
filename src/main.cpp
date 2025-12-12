@@ -99,7 +99,7 @@ int main() {
         args.push_back(const_cast<char*>(command.c_str()));
 
         for (auto& part : argParts) {
-          args.push_back(part);
+          args.push_back(const_cast<char*>(part.c_str()));
         }
         args.push_back(NULL);
 
