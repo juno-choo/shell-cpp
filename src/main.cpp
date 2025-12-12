@@ -35,7 +35,7 @@ string getPath(string cmd) {
   return "";
 }
 
-vector<string> splitLine(line) {
+vector<string> splitLine(string line) {
   vector<string> args;
   string word;
   stringstream ss(line);
