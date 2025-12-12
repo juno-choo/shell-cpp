@@ -17,9 +17,10 @@ bool isBuiltin(const string& cmd) {
 }
 
 string getPath(string cmd) {
-  // Gets the path of 
+  // Gets the path
   string pathEnv = getenv("PATH");
 
+  // Splits
   stringstream ss(pathEnv);
   string pathSegment;
 
@@ -63,7 +64,7 @@ int main() {
         cout << line << " is a shell builtin" << endl;
       } 
       else {
-        string path = getPath(command);
+        string path = getPath(line);
         if (!path.empty()) {
           cout << line << " is " << path << endl;
         }
