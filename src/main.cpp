@@ -1,9 +1,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream> // For stringstream (parsing PATH)
+#include <unistd.h> // For access() and X_OK
 using namespace std;
 
-const vector<string> BUILTINS = {"echo", "exit", "cd", "ls", "pwd", "type"};
+const vector<string> BUILTINS = {"echo", "exit", "cd", "pwd", "type"};
 
 bool isBuiltin(const string& cmd) {
   for (const auto& builtin : BUILTINS) {
@@ -13,6 +15,24 @@ bool isBuiltin(const string& cmd) {
   }
   return false;
 }
+
+string getPath(string cmd) {
+  // Gets the path of 
+  string pathEnv = getenv("PATH");
+
+  stringstream ss(pathEnv);
+  string pathSegment;
+
+  while (getline(ss, pathSegment, ':')) {
+    string absPath = pathSegment + '/' + cmd;
+
+    if (access(absPath.c_str(), X_OK) == 0) {
+      return absPath;
+    }
+  }
+  return "";
+}
+
 int main() {
   // Flush after every std::cout / std:cerr
   cout << unitbuf;
@@ -43,7 +63,13 @@ int main() {
         cout << line << " is a shell builtin" << endl;
       } 
       else {
-        cout << line << " not found" << endl;
+        string path = getPath(command);
+        if (!path.empty()) {
+          cout << line << " is " << path << endl;
+        }
+        else {
+          cout << line << ": not found" << endl;
+        }
       }
     }
     else {
