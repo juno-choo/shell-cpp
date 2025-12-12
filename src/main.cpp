@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream> // For stringstream (parsing PATH)
 #include <unistd.h> // For access() and X_OK
+#include <sys/wait.h> // For waitpid
 using namespace std;
 
 const vector<string> BUILTINS = {"echo", "exit", "cd", "pwd", "type"};
@@ -32,6 +33,17 @@ string getPath(string cmd) {
     }
   }
   return "";
+}
+
+vector<string> splitLine(line) {
+  vector<string> args;
+  string word;
+  stringstream ss(line);
+
+  while (ss >> word) {
+    args.push_back(word);
+  }
+  return args;
 }
 
 int main() {
@@ -74,7 +86,39 @@ int main() {
       }
     }
     else {
-      cout << command << ": command not found " << endl;  
+      string path = getPath(command);
+
+      if (path.empty()) {
+        cout << command << ": command not found " << endl; 
+      } 
+      else {
+        // Prepare arguments
+        vector<string> argParts = splitLine(line);
+        // Create vector of C-string for execv
+        vector<char*> args;
+        args.push_back(const_cast<char*>(command.c_str()));
+
+        for (auto& part : argParts) {
+          args.push_back(part);
+        }
+        args.push_back(NULL);
+
+        // Fork and execute
+        pid_t pid = fork();
+        if (pid == 0) {
+          // CHILD PROCESS
+          // execv replaces current process with new one
+          execv(path.c_str(), args.data());
+
+          perror("execv failed.");
+          exit(1);
+        }
+        else if (pid > 0) {
+          // PARENT PROCESS
+          int status;
+          waitpid(pid, &status, 0);
+        }
+      }
     } 
   }   
   return 0;
