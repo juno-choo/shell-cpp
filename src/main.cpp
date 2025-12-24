@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <sstream> // For stringstream (parsing PATH)
-#include <unistd.h> // For access() and X_OK
+#include <unistd.h> // For access(), X_OK, getcwd()
 #include <sys/wait.h> // For waitpid
 using namespace std;
 
@@ -40,6 +40,7 @@ vector<string> splitLine(string line) {
   string word;
   stringstream ss(line);
 
+  // Keep reading while there is a word
   while (ss >> word) {
     args.push_back(word);
   }
@@ -85,6 +86,10 @@ int main() {
         }
       }
     }
+    else if (command == "pwd") {
+      char buffer[1024];
+      cout << getcwd(buffer, sizeof(buffer)) << endl;
+    }
     else {
       string path = getPath(command);
 
@@ -105,17 +110,18 @@ int main() {
 
         // Fork and execute
         pid_t pid = fork();
+        // CHILD PROCESS
         if (pid == 0) {
-          // CHILD PROCESS
-          // execv replaces current process with new one
+          // execv replaces the shell's process with the intened program's
           execv(path.c_str(), args.data());
 
           perror("execv failed.");
           exit(1);
         }
+        // PARENT PROCESS
         else if (pid > 0) {
-          // PARENT PROCESS
           int status;
+          // Pauses until child is done
           waitpid(pid, &status, 0);
         }
       }
