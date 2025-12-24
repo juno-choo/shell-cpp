@@ -90,6 +90,13 @@ int main() {
       char buffer[1024];
       cout << getcwd(buffer, sizeof(buffer)) << endl;
     }
+    else if (command == "cd") {
+      int res = chdir(line.c_str());
+
+      if (res == -1) {
+        cout << "cd: " << line << ": No such file or directory" << endl;
+      }
+    }
     else {
       string path = getPath(command);
 
