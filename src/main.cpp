@@ -37,13 +37,30 @@ string getPath(string cmd) {
 
 vector<string> splitLine(string line) {
   vector<string> args;
-  string word;
-  stringstream ss(line);
+  string current;
+  bool inQuotes = false;
 
-  // Keep reading while there is a word
-  while (ss >> word) {
-    args.push_back(word);
+  for (int i = 0; i < line.length(); ++i) {
+    char c = line[i];
+
+    if (c == '\'') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+    else if (inQuotes == false && c == ' ') {
+      if (!current.empty()) {
+        args.push_back(current);
+        current = "";
+      }
+    }
+    else {
+      current += c;
+    }
   }
+  if (!current.empty()){
+    args.push_back(current);
+  }
+
   return args;
 }
 
