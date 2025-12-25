@@ -43,12 +43,17 @@ vector<string> splitLine(string line) {
   for (int i = 0; i < line.length(); ++i) {
     char c = line[i];
     
-
-    // Then in your loop:
     if ((c == '\'' || c == '\"') && quoteChar == '\0') {
         // Starting a quoted section
         quoteChar = c;
         continue;
+    }
+    else if (c == '\\' && quoteChar == '\0') {
+      if (i + 1 < line.length()) {
+        current += line[i+1];
+        i += 1; 
+      }
+      continue;
     }
     else if (c == quoteChar) {
         // Ending the quoted section (same quote type)
