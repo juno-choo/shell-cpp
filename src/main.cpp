@@ -87,7 +87,13 @@ int main() {
       break;
     } 
     else if (command == "echo") {
-      cout << line << endl;
+      vector<string> args = splitLine(line);
+
+      for (int i = 0; i < args.size(); ++i) {
+        if (i > 0) cout << " ";
+        cout << args[i];
+      }
+      cout << endl;
     }
     else if (command == "type") {
       if (isBuiltin(line)) {
