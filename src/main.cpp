@@ -38,16 +38,24 @@ string getPath(string cmd) {
 vector<string> splitLine(string line) {
   vector<string> args;
   string current;
-  bool inQuotes = false;
+  char quoteChar = '\0';  // '\0' means not in quotes
 
   for (int i = 0; i < line.length(); ++i) {
     char c = line[i];
+    
 
-    if (c == '\'') {
-      inQuotes = !inQuotes;
-      continue;
+    // Then in your loop:
+    if ((c == '\'' || c == '\"') && quoteChar == '\0') {
+        // Starting a quoted section
+        quoteChar = c;
+        continue;
     }
-    else if (inQuotes == false && c == ' ') {
+    else if (c == quoteChar) {
+        // Ending the quoted section (same quote type)
+        quoteChar = '\0';
+        continue;
+    }
+    else if (quoteChar == '\0' && c == ' ') {
       if (!current.empty()) {
         args.push_back(current);
         current = "";
