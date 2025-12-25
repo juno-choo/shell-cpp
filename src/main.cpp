@@ -91,10 +91,15 @@ int main() {
       cout << getcwd(buffer, sizeof(buffer)) << endl;
     }
     else if (command == "cd") {
-      int res = chdir(line.c_str());
+      if (line == "~"){
+        chdir(getenv("HOME"));
+      }
+      else {
+        int res = chdir(line.c_str());
 
-      if (res == -1) {
-        cout << "cd: " << line << ": No such file or directory" << endl;
+        if (res == -1) {
+          cout << "cd: " << line << ": No such file or directory" << endl;
+        }
       }
     }
     else {
