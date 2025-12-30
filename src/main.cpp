@@ -65,6 +65,7 @@ vector<string> splitLine(string line) {
         }
       }
       current += c;
+      continue;
     }
     else if (c == quoteChar) {
         // Ending the quoted section (same quote type)
@@ -98,38 +99,36 @@ int main() {
 
     string command;
     string line;
-    cin >> command;
-
-    // Remove leading space before getline
-    if (cin.peek() == ' ') {
-        cin.get();
-    }
 
     getline(cin, line); 
+    vector<string> tokens = splitLine(line);
+    if (tokens.empty()) {
+      continue;
+    }
+
+    command = tokens[0];
 
     if (command == "exit") {
       break;
     } 
     else if (command == "echo") {
-      vector<string> args = splitLine(line);
-
-      for (int i = 0; i < args.size(); ++i) {
-        if (i > 0) cout << " ";
-        cout << args[i];
+      for (int i = 1; i < tokens.size(); ++i) {
+        if (i > 1) cout << " ";
+        cout << tokens[i];
       }
       cout << endl;
     }
     else if (command == "type") {
-      if (isBuiltin(line)) {
-        cout << line << " is a shell builtin" << endl;
+      if (isBuiltin(tokens[1])) {
+        cout << tokens[1] << " is a shell builtin" << endl;
       } 
       else {
-        string path = getPath(line);
+        string path = getPath(tokens[1]);
         if (!path.empty()) {
-          cout << line << " is " << path << endl;
+          cout << tokens[1] << " is " << path << endl;
         }
         else {
-          cout << line << ": not found" << endl;
+          cout << tokens[1] << ": not found" << endl;
         }
       }
     }
@@ -138,14 +137,14 @@ int main() {
       cout << getcwd(buffer, sizeof(buffer)) << endl;
     }
     else if (command == "cd") {
-      if (line == "~"){
+      if (tokens[1] == "~"){
         chdir(getenv("HOME"));
       }
       else {
-        int res = chdir(line.c_str());
+        int res = chdir(tokens[1].c_str());
 
         if (res == -1) {
-          cout << "cd: " << line << ": No such file or directory" << endl;
+          cout << "cd: " << tokens[1] << ": No such file or directory" << endl;
         }
       }
     }
@@ -157,7 +156,7 @@ int main() {
       } 
       else {
         // Prepare arguments
-        vector<string> argParts = splitLine(line);
+        vector<string> argParts(tokens.begin() + 1, tokens.end());
         // Create vector of C-string for execv
         vector<char*> args;
         args.push_back(const_cast<char*>(command.c_str()));
