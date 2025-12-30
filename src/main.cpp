@@ -119,6 +119,9 @@ int main() {
       cout << endl;
     }
     else if (command == "type") {
+      if (tokens.size() < 2) {
+        continue;
+      }
       if (isBuiltin(tokens[1])) {
         cout << tokens[1] << " is a shell builtin" << endl;
       } 
@@ -137,7 +140,7 @@ int main() {
       cout << getcwd(buffer, sizeof(buffer)) << endl;
     }
     else if (command == "cd") {
-      if (tokens[1] == "~"){
+      if (tokens.size() < 2 || tokens[1] == "~"){
         chdir(getenv("HOME"));
       }
       else {
