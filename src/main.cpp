@@ -55,6 +55,17 @@ vector<string> splitLine(string line) {
       }
       continue;
     }
+    else if (c == '\\' && quoteChar == '"') {
+      // Peek ahead, check if special, decide what to add
+      if (i + 1 < line.length()) {
+        if (line[i+1] == '"' || line[i+1] == '\\') {
+          current += line[i+1];
+          i += 1; 
+          continue;
+        }
+      }
+      current += c;
+    }
     else if (c == quoteChar) {
         // Ending the quoted section (same quote type)
         quoteChar = '\0';
