@@ -4,6 +4,7 @@
 #include <sstream> // For stringstream (parsing PATH)
 #include <unistd.h> // For access(), X_OK, getcwd()
 #include <sys/wait.h> // For waitpid
+#include <fcntl.h>  // For open(), O_WRONLY, etc.
 using namespace std;
 
 const vector<string> BUILTINS = {"echo", "exit", "cd", "pwd", "type"};
@@ -89,6 +90,19 @@ vector<string> splitLine(string line) {
   return args;
 }
 
+int redirectStdout(const string& filename) {
+  int saved = dup(STDOUT_FILENO);
+  int fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  dup2(fd, STDOUT_FILENO);
+  close(fd);
+  return saved;
+}
+
+void restoreStdout(int saved) {
+  dup2(saved, STDOUT_FILENO);
+  close(saved);
+}
+
 int main() {
   // Flush after every std::cout / std:cerr
   cout << unitbuf;
@@ -99,24 +113,50 @@ int main() {
 
     string command;
     string line;
+    string stdoutFile;
 
     getline(cin, line); 
     vector<string> tokens = splitLine(line);
     if (tokens.empty()) {
       continue;
     }
-
     command = tokens[0];
+
+    // Scan for > operator
+    for (int i = 0; i < tokens.size(); ++i) {
+      if (tokens[i] == ">" || tokens[i] == "1>") {
+        // Remove the following tokens so command does not see them as arguments
+        // Grab filename
+        if (i + 1 < tokens.size()) {
+          stdoutFile = tokens[i + 1];
+        }
+        
+        // Erase from i to end
+        tokens.erase(tokens.begin() + i, tokens.end());
+        break;
+      }
+    }
 
     if (command == "exit") {
       break;
     } 
+
     else if (command == "echo") {
+      int saved = -1;
+
+      if (!stdoutFile.empty()) {
+        saved = redirectStdout(stdoutFile);
+      }
+
       for (int i = 1; i < tokens.size(); ++i) {
         if (i > 1) cout << " ";
         cout << tokens[i];
       }
       cout << endl;
+
+      if (saved != -1) {
+        restoreStdout(saved);
+      }
     }
     else if (command == "type") {
       if (tokens.size() < 2) {
@@ -140,6 +180,7 @@ int main() {
       cout << getcwd(buffer, sizeof(buffer)) << endl;
     }
     else if (command == "cd") {
+      // Default home 
       if (tokens.size() < 2 || tokens[1] == "~"){
         chdir(getenv("HOME"));
       }
@@ -173,9 +214,14 @@ int main() {
         pid_t pid = fork();
         // CHILD PROCESS
         if (pid == 0) {
-          // execv replaces the shell's process with the intened program's
-          execv(path.c_str(), args.data());
+          // Redirect stdout if needed
+          if (!stdoutFile.empty()) {
+            int fd = open(stdoutFile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            dup2(fd, STDOUT_FILENO);
+            close(fd);
+          }
 
+          execv(path.c_str(), args.data());
           perror("execv failed.");
           exit(1);
         }
