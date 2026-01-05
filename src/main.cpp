@@ -114,9 +114,12 @@ int main() {
     string command;
     string line;
     string stdoutFile;
+    string stderrFile;
 
     getline(cin, line); 
     vector<string> tokens = splitLine(line);
+    vector<string> cleanTokens;
+
     if (tokens.empty()) {
       continue;
     }
@@ -124,16 +127,18 @@ int main() {
 
     // Scan for > operator
     for (int i = 0; i < tokens.size(); ++i) {
-      if (tokens[i] == ">" || tokens[i] == "1>") {
+      if ((tokens[i] == ">" || tokens[i] == "1>") && i + 1 < tokens.size()) {
         // Remove the following tokens so command does not see them as arguments
         // Grab filename
-        if (i + 1 < tokens.size()) {
-          stdoutFile = tokens[i + 1];
-        }
-        
-        // Erase from i to end
-        tokens.erase(tokens.begin() + i, tokens.end());
-        break;
+        stdoutFile = tokens[i + 1];
+        i++;
+      }
+      else if (tokens[i] == "2>" && i + 1 < tokens.size()) {
+        stderrFile = tokens[i + 1];
+        i++;
+      }
+      else {
+        cleanTokens.push_back(tokens[i]);
       }
     }
 
@@ -148,9 +153,14 @@ int main() {
         saved = redirectStdout(stdoutFile);
       }
 
-      for (int i = 1; i < tokens.size(); ++i) {
+      if (!stderrFile.empty()) {
+        int fd = open(stderrFile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        close(fd);  // Just create/truncate it, nothing to write
+      }
+
+      for (int i = 1; i < cleanTokens.size(); ++i) {
         if (i > 1) cout << " ";
-        cout << tokens[i];
+        cout << cleanTokens[i];
       }
       cout << endl;
 
@@ -159,19 +169,19 @@ int main() {
       }
     }
     else if (command == "type") {
-      if (tokens.size() < 2) {
+      if (cleanTokens.size() < 2) {
         continue;
       }
-      if (isBuiltin(tokens[1])) {
-        cout << tokens[1] << " is a shell builtin" << endl;
+      if (isBuiltin(cleanTokens[1])) {
+        cout << cleanTokens[1] << " is a shell builtin" << endl;
       } 
       else {
-        string path = getPath(tokens[1]);
+        string path = getPath(cleanTokens[1]);
         if (!path.empty()) {
-          cout << tokens[1] << " is " << path << endl;
+          cout << cleanTokens[1] << " is " << path << endl;
         }
         else {
-          cout << tokens[1] << ": not found" << endl;
+          cout << cleanTokens[1] << ": not found" << endl;
         }
       }
     }
@@ -181,14 +191,14 @@ int main() {
     }
     else if (command == "cd") {
       // Default home 
-      if (tokens.size() < 2 || tokens[1] == "~"){
+      if (cleanTokens.size() < 2 || cleanTokens[1] == "~"){
         chdir(getenv("HOME"));
       }
       else {
-        int res = chdir(tokens[1].c_str());
+        int res = chdir(cleanTokens[1].c_str());
 
         if (res == -1) {
-          cout << "cd: " << tokens[1] << ": No such file or directory" << endl;
+          cout << "cd: " << cleanTokens[1] << ": No such file or directory" << endl;
         }
       }
     }
@@ -200,7 +210,7 @@ int main() {
       } 
       else {
         // Prepare arguments
-        vector<string> argParts(tokens.begin() + 1, tokens.end());
+        vector<string> argParts(cleanTokens.begin() + 1, cleanTokens.end());
         // Create vector of C-string for execv
         vector<char*> args;
         args.push_back(const_cast<char*>(command.c_str()));
@@ -218,6 +228,12 @@ int main() {
           if (!stdoutFile.empty()) {
             int fd = open(stdoutFile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
             dup2(fd, STDOUT_FILENO);
+            close(fd);
+          }
+
+          if (!stderrFile.empty()) {
+            int fd = open(stderrFile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            dup2(fd, STDERR_FILENO);
             close(fd);
           }
 
