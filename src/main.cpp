@@ -90,9 +90,15 @@ vector<string> splitLine(string line) {
   return args;
 }
 
-int redirectStdout(const string& filename) {
+int redirectStdout(const string& filename, bool append = false) {
   int saved = dup(STDOUT_FILENO);
-  int fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  int flags = O_WRONLY | O_CREAT;
+  if (append) {
+    flags |= O_APPEND;
+  } else {
+    flags |= O_TRUNC;
+  }
+  int fd = open(filename.c_str(), flags, 0644);
   dup2(fd, STDOUT_FILENO);
   close(fd);
   return saved;
@@ -115,6 +121,7 @@ int main() {
     string line;
     string stdoutFile;
     string stderrFile;
+    bool appendStdout = false;
 
     getline(cin, line); 
     vector<string> tokens = splitLine(line);
@@ -135,6 +142,11 @@ int main() {
       }
       else if (tokens[i] == "2>" && i + 1 < tokens.size()) {
         stderrFile = tokens[i + 1];
+        i++;
+      }
+      else if ((tokens[i] == ">>" || tokens[i] == "1>>") && i + 1 < tokens.size()) {
+        stdoutFile = tokens[i + 1];
+        appendStdout = true;
         i++;
       }
       else {
@@ -226,7 +238,13 @@ int main() {
         if (pid == 0) {
           // Redirect stdout if needed
           if (!stdoutFile.empty()) {
-            int fd = open(stdoutFile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            int flags = O_WRONLY | O_CREAT;
+            if (appendStdout) {
+              flags |= O_APPEND;
+            } else {
+              flags |= O_TRUNC;
+            }
+            int fd = open(stdoutFile.c_str(), flags, 0644);
             dup2(fd, STDOUT_FILENO);
             close(fd);
           }
