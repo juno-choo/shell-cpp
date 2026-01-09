@@ -162,7 +162,7 @@ int main() {
       int saved = -1;
 
       if (!stdoutFile.empty()) {
-        saved = redirectStdout(stdoutFile);
+        saved = redirectStdout(stdoutFile, appendStdout);
       }
 
       if (!stderrFile.empty()) {
