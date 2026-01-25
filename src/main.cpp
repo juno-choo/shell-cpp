@@ -122,6 +122,7 @@ int main() {
     string stdoutFile;
     string stderrFile;
     bool appendStdout = false;
+    bool appendStderr = false;
 
     getline(cin, line); 
     vector<string> tokens = splitLine(line);
@@ -149,6 +150,11 @@ int main() {
         appendStdout = true;
         i++;
       }
+      else if (tokens[i] == "2>>" && i + 1 < tokens.size()) {
+        stderrFile = tokens[i + 1];
+        appendStderr = true;
+        i++;
+      }
       else {
         cleanTokens.push_back(tokens[i]);
       }
@@ -166,8 +172,14 @@ int main() {
       }
 
       if (!stderrFile.empty()) {
-        int fd = open(stderrFile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-        close(fd);  // Just create/truncate it, nothing to write
+        int flags = O_WRONLY | O_CREAT;
+        if (appendStderr) {
+            flags |= O_APPEND;
+        } else {
+            flags |= O_TRUNC;
+        }
+        int fd = open(stderrFile.c_str(), flags, 0644);
+        close(fd);  // Just create/touch it, nothing to write
       }
 
       for (int i = 1; i < cleanTokens.size(); ++i) {
@@ -245,15 +257,21 @@ int main() {
               flags |= O_TRUNC;
             }
             int fd = open(stdoutFile.c_str(), flags, 0644);
-            dup2(fd, STDOUT_FILENO);
+            dup2(fd, STDOUT_FILENO); 
             close(fd);
           }
 
           if (!stderrFile.empty()) {
-            int fd = open(stderrFile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            dup2(fd, STDERR_FILENO);
-            close(fd);
-          }
+            int flags = O_WRONLY | O_CREAT;
+            if (appendStderr) {
+                flags |= O_APPEND;
+            } else {
+                flags |= O_TRUNC;
+            }
+            int fd = open(stderrFile.c_str(), flags, 0644);
+            dup2(fd, STDERR_FILENO);  // Actually redirect stderr!
+            close(fd);  // Just create/touch it, nothing to write
+        }
 
           execv(path.c_str(), args.data());
           perror("execv failed.");
