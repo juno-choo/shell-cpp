@@ -1,3 +1,4 @@
+#include <_string.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -5,6 +6,8 @@
 #include <unistd.h> // For access(), X_OK, getcwd()
 #include <sys/wait.h> // For waitpid
 #include <fcntl.h>  // For open(), O_WRONLY, etc.
+#include <readline/readline.h>
+#include <readline/history.h>
 using namespace std;
 
 const vector<string> BUILTINS = {"echo", "exit", "cd", "pwd", "type"};
@@ -109,14 +112,45 @@ void restoreStdout(int saved) {
   close(saved);
 }
 
+char* builtinGenerator(const char* text, int state) {
+  static int idx;
+  static int lengthOfText;
+
+  if (state == 0) {
+    idx = 0;
+    lengthOfText = strlen(text);
+  }
+
+  while (idx < BUILTINS.size()) {
+    if (BUILTINS[idx].compare(0, lengthOfText, text) == 0) {
+      idx++;
+      return strdup(BUILTINS[idx - 1].c_str());
+    }
+    idx++;
+  }
+
+  return nullptr;
+}
+
+// Auto-complete
+char** shellCompletion(const char* text, int start, int end) {
+  rl_attempted_completion_over = 1;
+
+  if (start == 0) {
+    return rl_completion_matches(text, builtinGenerator);
+  }
+
+  return nullptr;
+}
+
 int main() {
   // Flush after every std::cout / std:cerr
   cout << unitbuf;
   cerr << unitbuf;
+
+  rl_attempted_completion_function = shellCompletion;
   
   while (true) {
-    cout << "$ ";
-
     string command;
     string line;
     string stdoutFile;
@@ -124,7 +158,13 @@ int main() {
     bool appendStdout = false;
     bool appendStderr = false;
 
-    getline(cin, line); 
+    char* input = readline("$ ");
+    if (input == nullptr) {
+        break;  // Handle Ctrl+D
+    }
+    line = string(input);
+    free(input);
+    
     vector<string> tokens = splitLine(line);
     vector<string> cleanTokens;
 
@@ -272,7 +312,6 @@ int main() {
             dup2(fd, STDERR_FILENO);  // Actually redirect stderr!
             close(fd);  // Just create/touch it, nothing to write
         }
-
           execv(path.c_str(), args.data());
           perror("execv failed.");
           exit(1);
