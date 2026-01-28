@@ -1,4 +1,4 @@
-#include <_string.h>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -164,7 +164,7 @@ int main() {
     }
     line = string(input);
     free(input);
-    
+
     vector<string> tokens = splitLine(line);
     vector<string> cleanTokens;
 
